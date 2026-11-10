@@ -1,0 +1,13 @@
+# 依赖与构建产物
+/node_modules/
+/dist/
+/media/trends.js
+/*.vsix
+/coverage/
+
+# 系统文件与本地凭据
+.DS_Store
+.env
+.env.*
+!.env.example
+.vsce

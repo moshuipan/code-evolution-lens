@@ -1,0 +1,708 @@
+{
+  "name": "code-evolution-lens",
+  "displayName": "code-evolution-lens",
+  "description": "%extension.description%",
+  "version": "0.3.4",
+  "publisher": "luorAx",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moshuipan/code-evolution-lens.git"
+  },
+  "homepage": "https://github.com/moshuipan/code-evolution-lens#readme",
+  "bugs": {
+    "url": "https://github.com/moshuipan/code-evolution-lens/issues"
+  },
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "keywords": [
+    "git",
+    "code quality",
+    "analytics",
+    "ai",
+    "rewrite"
+  ],
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "%workspace.trust%"
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeEvolutionLens",
+          "title": "code-evolution-lens",
+          "icon": "media/lens.svg"
+        }
+      ]
+    },
+    "views": {
+      "codeEvolutionLens": [
+        {
+          "id": "codeEvolutionLens.tree",
+          "name": "%views.repositories%"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codeEvolutionLens.openTrends",
+        "title": "%commands.openTrends%",
+        "icon": "$(graph-line)"
+      },
+      {
+        "command": "codeEvolutionLens.openRepositoryTerminal",
+        "title": "%commands.openRepositoryTerminal%"
+      },
+      {
+        "command": "codeEvolutionLens.openFile",
+        "title": "%commands.openFile%"
+      },
+      {
+        "command": "codeEvolutionLens.refresh",
+        "title": "%commands.refresh%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "codeEvolutionLens.cancelIndex",
+        "title": "%commands.cancelIndex%",
+        "icon": "$(close)"
+      },
+      {
+        "command": "codeEvolutionLens.showFileEvents",
+        "title": "%commands.showFileEvents%"
+      },
+      {
+        "command": "codeEvolutionLens.showLineDetail",
+        "title": "%commands.showLineDetail%"
+      },
+      {
+        "command": "codeEvolutionLens.openRewriteDiff",
+        "title": "%commands.openRewriteDiff%"
+      },
+      {
+        "command": "codeEvolutionLens.revealCurrent",
+        "title": "%commands.revealCurrent%"
+      },
+      {
+        "command": "codeEvolutionLens.toggleDecorations",
+        "title": "%commands.toggleDecorations%"
+      },
+      {
+        "command": "codeEvolutionLens.showMethodology",
+        "title": "%commands.showMethodology%"
+      },
+      {
+        "command": "codeEvolutionLens.clearCache",
+        "title": "%commands.clearCache%"
+      },
+      {
+        "command": "codeEvolutionLens.showDiagnostics",
+        "title": "%commands.showDiagnostics%"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "codeEvolutionLens.openTrends",
+          "when": "view == codeEvolutionLens.tree",
+          "group": "navigation@0"
+        },
+        {
+          "command": "codeEvolutionLens.refresh",
+          "when": "view == codeEvolutionLens.tree",
+          "group": "navigation"
+        },
+        {
+          "command": "codeEvolutionLens.cancelIndex",
+          "when": "view == codeEvolutionLens.tree",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "codeEvolutionLens.openFile",
+          "when": "viewItem == lensFile",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "codeEvolutionLens.showLineDetail",
+          "when": "resourceScheme == file || resourceScheme == vscode-remote",
+          "group": "navigation@90"
+        },
+        {
+          "command": "codeEvolutionLens.showFileEvents",
+          "when": "resourceScheme == file || resourceScheme == vscode-remote",
+          "group": "navigation@91"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "code-evolution-lens",
+      "properties": {
+        "codeEvolutionLens.ref": {
+          "type": "string",
+          "default": "HEAD",
+          "examples": ["HEAD", "main", "origin/main"],
+          "markdownDescription": "%settings.ref%"
+        },
+        "codeEvolutionLens.detectAiMessageMarkers": {
+          "type": "boolean",
+          "default": false,
+          "examples": [false, true],
+          "markdownDescription": "%settings.detectAiMessageMarkers%"
+        },
+        "codeEvolutionLens.aiProviders": {
+          "type": "array",
+          "default": [
+            {
+              "provider": "Claude Code",
+              "nameTokens": ["claude"],
+              "emails": ["noreply"],
+              "bracketTags": ["claude", "claude-code"],
+              "messageMarkers": ["🤖 Generated with [Claude Code]", "Generated with Claude Code"]
+            },
+            {
+              "provider": "GitHub Copilot",
+              "nameTokens": ["copilot"],
+              "emails": ["copilot", "copilot-swe-agent", "copilot-swe-agent[bot]"],
+              "bracketTags": ["copilot"],
+              "messageMarkers": ["Co-authored-by: Copilot"]
+            },
+            {
+              "provider": "Cursor",
+              "nameTokens": ["cursor"],
+              "emails": ["noreply", "agent", "cursoragent"],
+              "bracketTags": ["cursor"],
+              "messageMarkers": ["Generated with Cursor"]
+            },
+            {
+              "provider": "aider",
+              "nameTokens": ["aider"],
+              "emails": ["aider"],
+              "bracketTags": ["aider"],
+              "subjectPrefixes": ["aider:"]
+            },
+            {
+              "provider": "OpenAI Codex",
+              "nameTokens": ["codex"],
+              "emails": ["codex"],
+              "bracketTags": ["codex"],
+              "messageMarkers": ["Generated with Codex"]
+            },
+            {
+              "provider": "Devin",
+              "nameTokens": ["devin"],
+              "emails": ["devin", "devin-ai-integration", "devin-ai-integration[bot]"],
+              "bracketTags": ["devin"]
+            },
+            {
+              "provider": "Windsurf",
+              "nameTokens": ["windsurf"],
+              "emails": ["noreply"],
+              "bracketTags": ["windsurf", "codeium"]
+            },
+            {
+              "provider": "Sourcegraph Cody",
+              "nameTokens": ["cody"],
+              "emails": ["cody"],
+              "bracketTags": ["cody"]
+            },
+            {
+              "provider": "Continue",
+              "nameTokens": ["continue.dev", "continuedev"],
+              "emails": ["noreply"],
+              "bracketTags": ["continue"]
+            },
+            {
+              "provider": "Sweep",
+              "nameTokens": ["sweep"],
+              "emails": ["sweep", "sweep-ai"],
+              "bracketTags": ["sweep"]
+            },
+            {
+              "provider": "gpt-engineer",
+              "nameTokens": ["gpt-engineer", "gpt engineer"],
+              "bracketTags": ["gpt-engineer"]
+            },
+            {
+              "provider": "TRAE",
+              "nameTokens": ["trae", "trae cn", "trae solo", "traecode", "traework"],
+              "bracketTags": ["trae", "trae-cn", "trae-solo", "traecode", "traework"]
+            },
+            {
+              "provider": "Qoder",
+              "nameTokens": ["qoder", "qoder cli"],
+              "bracketTags": ["qoder", "qoder-cli"]
+            },
+            {
+              "provider": "OpenClaw",
+              "nameTokens": ["openclaw", "open claw"],
+              "bracketTags": ["openclaw"]
+            },
+            {
+              "provider": "Pi Coding Agent",
+              "nameTokens": ["pi coding agent", "pi-coding-agent", "pi"],
+              "bracketTags": ["pi", "pi-coding-agent"]
+            },
+            {
+              "provider": "OpenCode",
+              "nameTokens": ["opencode", "open code"],
+              "bracketTags": ["opencode"]
+            },
+            {
+              "provider": "Cline",
+              "nameTokens": ["cline"],
+              "bracketTags": ["cline"]
+            },
+            {
+              "provider": "Roo Code",
+              "nameTokens": ["roo code", "roo-code"],
+              "bracketTags": ["roo", "roo-code"]
+            },
+            {
+              "provider": "Kilo Code",
+              "nameTokens": ["kilo code", "kilocode", "kilo-code"],
+              "bracketTags": ["kilo", "kilo-code", "kilocode"]
+            },
+            {
+              "provider": "Amp",
+              "nameTokens": ["amp", "ampcode"],
+              "emails": ["amp"],
+              "bracketTags": ["amp", "ampcode"]
+            },
+            {
+              "provider": "Gemini CLI",
+              "nameTokens": ["gemini cli", "gemini-cli"],
+              "bracketTags": ["gemini", "gemini-cli"]
+            },
+            {
+              "provider": "Qwen Code",
+              "nameTokens": ["qwen code", "qwen-code"],
+              "bracketTags": ["qwen", "qwen-code"]
+            },
+            {
+              "provider": "Kimi Code CLI",
+              "nameTokens": ["kimi code cli", "kimi code", "kimi-code"],
+              "bracketTags": ["kimi", "kimi-code", "kimi-cli"]
+            },
+            {
+              "provider": "Kiro",
+              "nameTokens": ["kiro", "kiro cli"],
+              "bracketTags": ["kiro", "kiro-cli"]
+            },
+            {
+              "provider": "Google Antigravity",
+              "nameTokens": ["google antigravity", "antigravity"],
+              "bracketTags": ["antigravity"]
+            },
+            {
+              "provider": "CodeBuddy",
+              "nameTokens": ["codebuddy", "code buddy"],
+              "bracketTags": ["codebuddy"]
+            },
+            {
+              "provider": "Augment Code",
+              "nameTokens": ["augment code", "augmentcode", "auggie"],
+              "bracketTags": ["augment", "augment-code", "auggie"]
+            },
+            {
+              "provider": "Goose",
+              "nameTokens": ["goose"],
+              "bracketTags": ["goose"]
+            },
+            {
+              "provider": "Factory Droid",
+              "nameTokens": ["factory droid", "factory-droid"],
+              "emails": ["factory-droid[bot]"],
+              "bracketTags": ["factory-droid", "droid"]
+            },
+            {
+              "provider": "OpenHands",
+              "nameTokens": ["openhands", "open hands"],
+              "emails": ["openhands", "openhands-ai[bot]"],
+              "bracketTags": ["openhands"]
+            },
+            {
+              "provider": "Junie",
+              "nameTokens": ["junie"],
+              "bracketTags": ["junie"]
+            },
+            {
+              "provider": "Mistral Vibe",
+              "nameTokens": ["mistral vibe", "mistral-vibe"],
+              "bracketTags": ["mistral-vibe"]
+            },
+            {
+              "provider": "Crush",
+              "nameTokens": ["crush"],
+              "bracketTags": ["crush"]
+            },
+            {
+              "provider": "Warp",
+              "nameTokens": ["warp", "oz agent", "oz-agent"],
+              "emails": ["oz-agent"],
+              "bracketTags": ["warp", "oz-agent"]
+            },
+            {
+              "provider": "Amazon Q Developer",
+              "nameTokens": ["amazon q developer", "amazon-q-developer"],
+              "emails": ["amazon-q-developer[bot]"],
+              "bracketTags": ["amazon-q", "amazon-q-developer"]
+            },
+            {
+              "provider": "Google Jules",
+              "nameTokens": ["google jules", "jules"],
+              "emails": ["google-labs-jules[bot]"],
+              "bracketTags": ["jules", "google-jules"]
+            },
+            {
+              "provider": "JetBrains AI Assistant",
+              "nameTokens": ["jetbrains ai assistant", "jetbrains-ai-assistant"],
+              "bracketTags": ["jetbrains-ai", "jetbrains-ai-assistant"]
+            },
+            {
+              "provider": "Zed",
+              "nameTokens": ["zed", "zed agent"],
+              "bracketTags": ["zed", "zed-agent"]
+            },
+            {
+              "provider": "Codebuff",
+              "nameTokens": ["codebuff"],
+              "bracketTags": ["codebuff"]
+            },
+            {
+              "provider": "ForgeCode",
+              "nameTokens": ["forgecode", "forge code"],
+              "bracketTags": ["forgecode"]
+            },
+            {
+              "provider": "Plandex",
+              "nameTokens": ["plandex"],
+              "bracketTags": ["plandex"]
+            },
+            {
+              "provider": "Refact.ai",
+              "nameTokens": ["refact.ai", "refact"],
+              "bracketTags": ["refact", "refact.ai"]
+            },
+            {
+              "provider": "Letta Code",
+              "nameTokens": ["letta code", "letta-code"],
+              "bracketTags": ["letta", "letta-code"]
+            },
+            {
+              "provider": "Replit Agent",
+              "nameTokens": ["replit agent", "replit-agent"],
+              "bracketTags": ["replit", "replit-agent"]
+            },
+            {
+              "provider": "Bolt",
+              "nameTokens": ["bolt.new", "bolt agent", "bolt-agent"],
+              "bracketTags": ["bolt", "bolt.new", "bolt-agent"]
+            },
+            {
+              "provider": "Lovable",
+              "nameTokens": ["lovable"],
+              "emails": ["gpt-engineer-app[bot]"],
+              "bracketTags": ["lovable"]
+            },
+            {
+              "provider": "v0",
+              "nameTokens": ["v0", "v0.dev"],
+              "emails": ["it+v0agent", "v0[bot]"],
+              "bracketTags": ["v0", "v0.dev"]
+            },
+            {
+              "provider": "Codegen",
+              "nameTokens": ["codegen", "codegen.sh"],
+              "emails": ["codegen-sh[bot]"],
+              "bracketTags": ["codegen", "codegen.sh"]
+            },
+            {
+              "provider": "Tongyi Lingma",
+              "nameTokens": ["tongyi lingma", "tongyi-lingma", "lingma", "通义灵码"],
+              "bracketTags": ["lingma", "tongyi-lingma"]
+            },
+            {
+              "provider": "iFlow CLI",
+              "nameTokens": ["iflow cli", "iflow-cli", "iflow"],
+              "bracketTags": ["iflow", "iflow-cli"]
+            },
+            {
+              "provider": "Zencoder",
+              "nameTokens": ["zencoder"],
+              "bracketTags": ["zencoder"]
+            },
+            {
+              "provider": "Pochi",
+              "nameTokens": ["pochi"],
+              "bracketTags": ["pochi"]
+            },
+            {
+              "provider": "Kode",
+              "nameTokens": ["kode"],
+              "bracketTags": ["kode"]
+            },
+            {
+              "provider": "Neovate",
+              "nameTokens": ["neovate"],
+              "bracketTags": ["neovate"]
+            },
+            {
+              "provider": "Cortex Code",
+              "nameTokens": ["cortex code", "cortex-code"],
+              "bracketTags": ["cortex-code"]
+            },
+            {
+              "provider": "Mux",
+              "nameTokens": ["mux", "mux agent"],
+              "bracketTags": ["mux", "mux-agent"]
+            },
+            {
+              "provider": "Deep Agents",
+              "nameTokens": ["deep agents", "deepagents", "deep-agents"],
+              "bracketTags": ["deepagents", "deep-agents"]
+            },
+            {
+              "provider": "Firebender",
+              "nameTokens": ["firebender"],
+              "bracketTags": ["firebender"]
+            },
+            {
+              "provider": "Oh My Pi",
+              "nameTokens": ["omp", "oh my pi", "oh-my-pi"],
+              "bracketTags": ["omp", "oh-my-pi"]
+            },
+            {
+              "provider": "Reasonix",
+              "nameTokens": ["reasonix"],
+              "bracketTags": ["reasonix"]
+            },
+            {
+              "provider": "ZCode",
+              "nameTokens": ["zcode"],
+              "bracketTags": ["zcode"]
+            },
+            {
+              "provider": "Grok Build",
+              "nameTokens": ["grok build", "grok-build"],
+              "bracketTags": ["grok-build"]
+            },
+            {
+              "provider": "Snow CLI",
+              "nameTokens": ["snow cli", "snow-cli"],
+              "bracketTags": ["snow-cli"]
+            },
+            {
+              "provider": "DeepSeek Harness",
+              "nameTokens": ["deepseek harness", "deepseek-harness"],
+              "bracketTags": ["deepseek-harness"]
+            },
+            {
+              "provider": "Deep Code",
+              "nameTokens": ["deep code", "deepcode", "deep-code"],
+              "bracketTags": ["deepcode", "deep-code"]
+            },
+            {
+              "provider": "Langcli",
+              "nameTokens": ["langcli"],
+              "bracketTags": ["langcli"]
+            },
+            {
+              "provider": "Hermes Agent",
+              "nameTokens": ["hermes agent", "hermes-agent"],
+              "bracketTags": ["hermes", "hermes-agent"]
+            },
+            {
+              "provider": "Blackbox AI",
+              "nameTokens": ["blackbox ai", "blackbox-ai"],
+              "bracketTags": ["blackbox", "blackbox-ai"]
+            }
+          ],
+          "defaultSnippets": [
+            {
+              "label": "%settings.aiProviders.snippet%",
+              "body": [
+                {
+                  "provider": "内部编码助手",
+                  "emails": ["internal-codebot"],
+                  "nameTokens": ["internal assistant"],
+                  "bracketTags": ["internal-ai"],
+                  "messageMarkers": ["Generated with Internal Assistant"],
+                  "subjectPrefixes": ["internal-ai:"]
+                }
+              ]
+            }
+          ],
+          "examples": [[{"provider": "内部编码助手", "emails": ["internal-codebot"], "nameTokens": ["internal assistant"]}]],
+          "maxItems": 128,
+"description": "%settings.aiProviders.description%",
+          "markdownDescription": "%settings.aiProviders.markdownDescription%",
+          "items": {
+            "type": "object",
+            "required": [
+              "provider"
+            ],
+            "anyOf": [
+              { "required": ["nameTokens"], "properties": { "nameTokens": { "minItems": 1 } } },
+              { "required": ["emails"], "properties": { "emails": { "minItems": 1 } } },
+              { "required": ["bracketTags"], "properties": { "bracketTags": { "minItems": 1 } } },
+              { "required": ["messageMarkers"], "properties": { "messageMarkers": { "minItems": 1 } } },
+              { "required": ["subjectPrefixes"], "properties": { "subjectPrefixes": { "minItems": 1 } } }
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "provider": {
+                "type": "string",
+                "title": "%settings.aiProviders.provider.title%",
+                "minLength": 1,
+                "maxLength": 128,
+                "default": "内部编码助手",
+                "examples": ["内部编码助手"],
+                "markdownDescription": "%settings.aiProviders.provider.description%"
+              },
+              "nameTokens": {
+                "type": "array",
+                "title": "%settings.aiProviders.nameTokens.title%",
+                "default": [],
+                "examples": [["claude"], ["internal assistant"]],
+                "maxItems": 64,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "markdownDescription": "%settings.aiProviders.nameTokens.description%"
+              },
+              "emails": {
+                "type": "array",
+                "title": "%settings.aiProviders.emails.title%",
+                "default": [],
+                "examples": [["copilot-swe-agent"], ["internal-codebot"]],
+                "maxItems": 64,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256,
+                  "pattern": "^[^@<>\\s]+$"
+                },
+                "markdownDescription": "%settings.aiProviders.emails.description%"
+              },
+              "bracketTags": {
+                "type": "array",
+                "title": "%settings.aiProviders.bracketTags.title%",
+                "default": [],
+                "examples": [["claude"], ["internal-ai"]],
+                "maxItems": 64,
+                "items": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 31,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9 _.-]{1,30}$"
+                },
+                "markdownDescription": "%settings.aiProviders.bracketTags.description%"
+              },
+              "messageMarkers": {
+                "type": "array",
+                "title": "%settings.aiProviders.messageMarkers.title%",
+                "default": [],
+                "examples": [["Generated with Claude Code"], ["Generated with Internal Assistant"]],
+                "maxItems": 64,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "markdownDescription": "%settings.aiProviders.messageMarkers.description%"
+              },
+              "subjectPrefixes": {
+                "type": "array",
+                "title": "%settings.aiProviders.subjectPrefixes.title%",
+                "default": [],
+                "examples": [["aider:"], ["internal-ai:"]],
+                "maxItems": 64,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+"markdownDescription": "%settings.aiProviders.subjectPrefixes.description%"
+              }
+            }
+          }
+        },
+        "codeEvolutionLens.excludeGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/vendor/**",
+            "**/dist/**",
+            "**/*.min.*",
+            "**/package-lock.json",
+            "**/pnpm-lock.yaml",
+            "**/yarn.lock",
+            "**/Cargo.lock",
+            "**/poetry.lock"
+          ],
+          "examples": [["**/vendor/**", "**/thrift_gen/**"]],
+          "markdownDescription": "%settings.excludeGlobs%"
+        },
+        "codeEvolutionLens.decorations.enabled": {
+          "type": "boolean",
+          "default": true,
+          "examples": [true, false],
+          "markdownDescription": "%settings.decorations.enabled%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "node scripts/build.mjs",
+    "test": "tsx --test test/*.test.ts",
+    "package": "npm run check && vsce package --no-dependencies",
+    "vscode:prepublish": "npm run build"
+  },
+  "dependencies": {
+    "diff": "8.0.4",
+    "minimatch": "11.0.1",
+    "sql.js": "1.15.2"
+  },
+  "overrides": {
+    "minimatch": "$minimatch"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "22.15.30",
+    "@types/sql.js": "1.4.9",
+    "@types/vscode": "1.95.0",
+    "@vscode/vsce": "4.1.0",
+    "esbuild": "0.25.5",
+    "jsdom": "^26.1.0",
+    "tsx": "4.20.3",
+    "typescript": "5.8.3"
+  }
+}

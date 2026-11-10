@@ -1,0 +1,778 @@
+// code-evolution-lens：完整默认配置。复制所需字段到仓库 .vscode/settings.json。
+// 数组替换本项默认值；需要保留的默认规则请勿删除。邮箱配置只填写 @ 前名称。
+{
+  // 要分析的本地 Git 引用。默认 HEAD 表示当前检出的提交；示例：main 或已存在的 origin/main。不会自动 fetch。修改后刷新索引。
+  "codeEvolutionLens.ref": "HEAD",
+
+  // 额外识别提交正文、标题标签和前缀。默认 false；示例设为 true 后，可识别 [claude]、aider: 和 Generated with Cursor。结尾 Co-authored-by 等归因声明始终按配置识别，不受此开关影响。
+  "codeEvolutionLens.detectAiMessageMarkers": false,
+
+  // 填写 AI 工具规则数组，每个对象代表一个工具。默认覆盖 **68 类 Agent**，含 TRAE、Codex、OpenClaw、Qoder、Pi。各字段的作用如下：
+  // - **provider**：必填的显示名称，如 "TRAE"；这个字段本身不参与匹配。
+  // - **nameTokens**：填写结尾归因声明名称中的完整词或短语。["claude"] 命中 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com，不命中 McClaude；忽略大小写，也支持 Name <email> 和 Generated-By／Assisted-by／Created-by。声明块需位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。**无需开启消息识别开关**。
+  // - **emails**：填写邮箱 @ 前的完整名称，字段名为 emails。["internal-codebot"] 命中作者、提交者或结尾声明中的 internal-codebot@company.example。忽略大小写和域名，不填完整地址、通配符或数字账号 ID；GitHub 的 数字ID+copilot-swe-agent[bot]@users.noreply.github.com 可用 ["copilot-swe-agent[bot]"]，保留 [bot]。普通邮箱保留加号。noreply、agent 等通用名称可能误判。**无需开启消息识别开关**。
+  // - **bracketTags**：填写标题中方括号内的标签，不带方括号。["trae"] 命中标题 [trae] 修复缓存。只检查标题，忽略大小写；使用 2—31 个英文字母、数字、空格或 _ . -，首位是字母或数字。**需要 detectAiMessageMarkers: true**。
+  // - **messageMarkers**：填写提交消息中的固定文本。["Generated with Cursor"] 命中标题或正文包含此文字的提交；忽略大小写，按字面子串匹配，不支持正则。**需要 detectAiMessageMarkers: true**。
+  // - **subjectPrefixes**：填写标题开头的固定前缀和标点。["aider:"] 命中标题 aider: 修复权限校验，前缀后直接接字母、数字或下划线不命中；忽略大小写。**需要 detectAiMessageMarkers: true**。
+  // provider 外的字段都是字符串数组，至少填写一项匹配规则；已开启字段或数组中的任意一项命中即可，省略或 [] 停用该字段。最简示例：[{"provider":"TRAE","nameTokens":["trae"]}]。自定义数组替换默认值，添加工具请在现有数组上追加；同名 provider 合并规则。detectAiMessageMarkers 默认 false。默认产品名称和标签不保证工具自动写入 Git 声明；没有 Git 标记时不能据此识别 AI 使用，完整来源见随包 PROVIDERS.md。
+  "codeEvolutionLens.aiProviders": [
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Claude Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["claude"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["noreply"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["claude","claude-code"],
+
+      // 填写工具写入提交消息的固定文本，使用字符串数组。例如 ["Generated with Claude Code"]：提交标题或正文包含这段文字就会命中。忽略大小写，按字面子串匹配，不支持正则或通配符；不要仅填 AI 这类宽泛词。需要 detectAiMessageMarkers: true；省略或填 [] 表示不搜索消息文本。
+      "messageMarkers": ["🤖 Generated with [Claude Code]","Generated with Claude Code"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "GitHub Copilot",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["copilot"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["copilot","copilot-swe-agent","copilot-swe-agent[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["copilot"],
+
+      // 填写工具写入提交消息的固定文本，使用字符串数组。例如 ["Generated with Claude Code"]：提交标题或正文包含这段文字就会命中。忽略大小写，按字面子串匹配，不支持正则或通配符；不要仅填 AI 这类宽泛词。需要 detectAiMessageMarkers: true；省略或填 [] 表示不搜索消息文本。
+      "messageMarkers": ["Co-authored-by: Copilot"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Cursor",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["cursor"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["noreply","agent","cursoragent"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["cursor"],
+
+      // 填写工具写入提交消息的固定文本，使用字符串数组。例如 ["Generated with Claude Code"]：提交标题或正文包含这段文字就会命中。忽略大小写，按字面子串匹配，不支持正则或通配符；不要仅填 AI 这类宽泛词。需要 detectAiMessageMarkers: true；省略或填 [] 表示不搜索消息文本。
+      "messageMarkers": ["Generated with Cursor"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "aider",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["aider"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["aider"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["aider"],
+
+      // 填写提交标题开头的固定前缀，使用字符串数组，标点也要写入。示例 ["aider:"] 匹配标题 aider: 修复权限校验；fix: aider: 修复权限校验 不匹配。建议使用带冒号、后接空格的前缀；前缀后直接连接字母、数字或下划线时不匹配。忽略大小写，不支持正则。需要 detectAiMessageMarkers: true；省略或填 [] 表示不按标题前缀识别。
+      "subjectPrefixes": ["aider:"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "OpenAI Codex",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["codex"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["codex"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["codex"],
+
+      // 填写工具写入提交消息的固定文本，使用字符串数组。例如 ["Generated with Claude Code"]：提交标题或正文包含这段文字就会命中。忽略大小写，按字面子串匹配，不支持正则或通配符；不要仅填 AI 这类宽泛词。需要 detectAiMessageMarkers: true；省略或填 [] 表示不搜索消息文本。
+      "messageMarkers": ["Generated with Codex"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Devin",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["devin"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["devin","devin-ai-integration","devin-ai-integration[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["devin"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Windsurf",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["windsurf"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["noreply"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["windsurf","codeium"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Sourcegraph Cody",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["cody"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["cody"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["cody"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Continue",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["continue.dev","continuedev"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["noreply"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["continue"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Sweep",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["sweep"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["sweep","sweep-ai"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["sweep"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "gpt-engineer",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["gpt-engineer","gpt engineer"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["gpt-engineer"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "TRAE",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["trae","trae cn","trae solo","traecode","traework"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["trae","trae-cn","trae-solo","traecode","traework"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Qoder",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["qoder","qoder cli"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["qoder","qoder-cli"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "OpenClaw",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["openclaw","open claw"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["openclaw"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Pi Coding Agent",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["pi coding agent","pi-coding-agent","pi"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["pi","pi-coding-agent"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "OpenCode",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["opencode","open code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["opencode"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Cline",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["cline"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["cline"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Roo Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["roo code","roo-code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["roo","roo-code"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Kilo Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["kilo code","kilocode","kilo-code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["kilo","kilo-code","kilocode"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Amp",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["amp","ampcode"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["amp"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["amp","ampcode"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Gemini CLI",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["gemini cli","gemini-cli"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["gemini","gemini-cli"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Qwen Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["qwen code","qwen-code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["qwen","qwen-code"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Kimi Code CLI",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["kimi code cli","kimi code","kimi-code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["kimi","kimi-code","kimi-cli"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Kiro",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["kiro","kiro cli"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["kiro","kiro-cli"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Google Antigravity",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["google antigravity","antigravity"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["antigravity"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "CodeBuddy",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["codebuddy","code buddy"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["codebuddy"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Augment Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["augment code","augmentcode","auggie"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["augment","augment-code","auggie"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Goose",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["goose"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["goose"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Factory Droid",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["factory droid","factory-droid"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["factory-droid[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["factory-droid","droid"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "OpenHands",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["openhands","open hands"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["openhands","openhands-ai[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["openhands"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Junie",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["junie"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["junie"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Mistral Vibe",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["mistral vibe","mistral-vibe"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["mistral-vibe"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Crush",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["crush"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["crush"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Warp",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["warp","oz agent","oz-agent"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["oz-agent"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["warp","oz-agent"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Amazon Q Developer",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["amazon q developer","amazon-q-developer"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["amazon-q-developer[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["amazon-q","amazon-q-developer"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Google Jules",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["google jules","jules"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["google-labs-jules[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["jules","google-jules"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "JetBrains AI Assistant",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["jetbrains ai assistant","jetbrains-ai-assistant"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["jetbrains-ai","jetbrains-ai-assistant"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Zed",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["zed","zed agent"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["zed","zed-agent"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Codebuff",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["codebuff"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["codebuff"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "ForgeCode",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["forgecode","forge code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["forgecode"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Plandex",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["plandex"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["plandex"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Refact.ai",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["refact.ai","refact"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["refact","refact.ai"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Letta Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["letta code","letta-code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["letta","letta-code"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Replit Agent",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["replit agent","replit-agent"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["replit","replit-agent"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Bolt",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["bolt.new","bolt agent","bolt-agent"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["bolt","bolt.new","bolt-agent"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Lovable",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["lovable"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["gpt-engineer-app[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["lovable"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "v0",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["v0","v0.dev"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["it+v0agent","v0[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["v0","v0.dev"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Codegen",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["codegen","codegen.sh"],
+
+      // 填写邮箱中 @ 前的名称，使用字符串数组。例如 ["internal-codebot"] 匹配 internal-codebot@company.example；不要填写完整地址、@、域名或通配符，完整地址会报错。匹配作者、提交者和结尾归因声明，忽略大小写及域名。["copilot-swe-agent"] 还能匹配 GitHub 的 数字ID+copilot-swe-agent@users.noreply.github.com。普通邮箱的加号保留。noreply 等通用名称会扩大匹配范围。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按邮箱识别。
+      "emails": ["codegen-sh[bot]"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["codegen","codegen.sh"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Tongyi Lingma",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["tongyi lingma","tongyi-lingma","lingma","通义灵码"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["lingma","tongyi-lingma"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "iFlow CLI",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["iflow cli","iflow-cli","iflow"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["iflow","iflow-cli"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Zencoder",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["zencoder"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["zencoder"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Pochi",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["pochi"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["pochi"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Kode",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["kode"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["kode"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Neovate",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["neovate"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["neovate"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Cortex Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["cortex code","cortex-code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["cortex-code"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Mux",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["mux","mux agent"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["mux","mux-agent"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Deep Agents",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["deep agents","deepagents","deep-agents"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["deepagents","deep-agents"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Firebender",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["firebender"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["firebender"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Oh My Pi",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["omp","oh my pi","oh-my-pi"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["omp","oh-my-pi"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Reasonix",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["reasonix"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["reasonix"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "ZCode",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["zcode"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["zcode"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Grok Build",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["grok build","grok-build"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["grok-build"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Snow CLI",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["snow cli","snow-cli"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["snow-cli"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "DeepSeek Harness",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["deepseek harness","deepseek-harness"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["deepseek-harness"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Deep Code",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["deep code","deepcode","deep-code"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["deepcode","deep-code"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Langcli",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["langcli"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["langcli"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Hermes Agent",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["hermes agent","hermes-agent"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["hermes","hermes-agent"]
+    },
+    {
+      // 填写在归因详情中展示的工具名称，必填字符串。例如 "Claude Code" 或 "内部编码助手"。这个名称本身不参与匹配；请另外填写至少一项 nameTokens、emails 或消息匹配字段。
+      "provider": "Blackbox AI",
+
+      // 填写结尾归因声明名称中的工具关键词或短语，使用字符串数组。示例 ["claude"]：结尾 Co-Authored-By: Claude Sonnet 4.6 noreply@anthropic.com 会命中。也支持 Claude Sonnet 4.6 <noreply@anthropic.com> 和 Generated-By／Assisted-by／Created-by。声明块位于消息末尾，与正文隔一个空行；普通作者／提交者姓名不参与名称匹配。只填 claude 即可覆盖型号和版本后缀，不要填写整行声明、邮箱或正则表达式。忽略大小写，按完整词或短语匹配，McClaude 不命中。不需要开启 detectAiMessageMarkers；省略或填 [] 表示不按名称识别。
+      "nameTokens": ["blackbox ai","blackbox-ai"],
+
+      // 填写提交标题方括号里的标签，使用字符串数组且不要带方括号。示例 ["claude"] 匹配标题 [claude] 增加权限缓存，不要填 ["[claude]"]。使用 2—31 个英文字母、数字、空格或 _ . -，首位为字母或数字。只检查标题，忽略大小写。需要 detectAiMessageMarkers: true；省略或填 [] 表示不使用标题标签。
+      "bracketTags": ["blackbox","blackbox-ai"]
+    }
+  ],
+
+  // 排除不统计的新代码路径，按仓库相对路径匹配。示例：**/thrift_gen/** 排除各级生成目录。自定义数组替换默认列表，请保留仍需使用的默认项；已纳入统计的行移入排除路径后仍继续跟踪。
+  "codeEvolutionLens.excludeGlobs": ["**/node_modules/**","**/vendor/**","**/dist/**","**/*.min.*","**/package-lock.json","**/pnpm-lock.yaml","**/yarn.lock","**/Cargo.lock","**/poetry.lock"],
+
+  // 在核验通过的编辑器代码行前显示低对比、普通字重的 ai（AI 辅助新增）和 改（仍可定位的首次修改区域，英文界面显示 rw）。悬浮可查看归因与返工详情；滚动复用核验结果，同文档分栏独立显示。文档编辑、分支或快照失效时清除标记。默认 true；设为 false 关闭，趋势统计不受影响。
+  "codeEvolutionLens.decorations.enabled": true
+}
